@@ -30,69 +30,66 @@ combined.min = reshape([allData{6,:,:}],[N,4]);
 
 %% Gaussian fit
 % Fit each channel on each file, and plot to compare
-close all
-gaussFun = @(a,x0,y0,sx,sy,x,y) a .* exp(-( (x-x0).^2./2./sx^2 + (y-y0).^2./2./sy^2 ));
-% Loop through the files and fit each set of Gaussians and plot
-figure();
-for i = 1:N
-    % Find the 4 Gaussian parameters for a file
-    params{i} = fit4Gaussian(data(i));
-    
-    % Plot the 4 gaussians
-    ax(i) = subplot(2,2,i);
-    plot4Gaussian(params{i});
-end
-
-% Link the axes so we can visually inspect and compare
-hlink = linkprop([ax(:)],{'CameraPosition','CameraUpVector'});
+% close all
+% gaussFun = @(a,x0,y0,sx,sy,x,y) a .* exp(-( (x-x0).^2./2./sx^2 + (y-y0).^2./2./sy^2 ));
+% % Loop through the files and fit each set of Gaussians and plot
+% figure();
+% for i = 1:N
+%     % Find the 4 Gaussian parameters for a file
+%     params{i} = fit4Gaussian(data(i));
+%     
+%     % Plot the 4 gaussians
+%     ax(i) = subplot(2,2,i);
+%     plot4Gaussian(params{i});
+% end
+% 
+% % Link the axes so we can visually inspect and compare
+% hlink = linkprop([ax(:)],{'CameraPosition','CameraUpVector'});
 
 %% Compare parameters for fit Gaussians
 
-
+load('params_jul25.mat','params','paramAvg')
 % Add up and take average
 paramAvg = (params{1} + params{2} + params{3} + params{4})./N;
 
-save('params_jul25.mat','params','paramAvg')
+% save('params_jul25.mat','params','paramAvg')
+
+
+% Confirm table scale based on max params
+% distTx = sqrt( (paramAvg(1,2) - paramAvg(2,2))^2 + (paramAvg(1,3) - paramAvg(2,3))^2)
+% scale = distTx / 240
+scale = 4/3;
 
 %% Predictions with Gaussian power database
-% Grab a file and a param set
-p = params{2};
-input = data(1);
-k = 1:100:length(input.x);
+% Loop through the 4 files. Fit Gaussian to a file, and test against
+% another file. Report back the error
 
-result = lookupFingerprint(input,p,k);
-figure(),hist(result.error)
-figure()
+for i = 1:4
+    % Grab a file and a param set, perform a lookup
 
+    input = data(i);
+    k = 1:250:length(input.x);
+    if i == 4  % If we reach end of files, loop around
+        p = params{1};
+    else
+        p = params{i+1};
+    end
 
-% Simulate param space
-x = 1:640;
-y = 1:480;
-[x,y] = meshgrid(x,y);
-powerVec = zeros(640*480,4);
-for i=1:4
-    a=p(i,1); x0=p(i,2); y0=p(i,3); sx=p(i,4); sy=p(i,5);
-    power{i} = gaussFun(a,x0,y0,sx,sy,x,y);
-    powerVec(:,i) = reshape(power{i},[640*480,1]);
+    % Lookup to find the predicted values. Returns error  R2, guesses
+    aresult = lookupFingerprint(input,p,k);
+    
+    result.error{i} = aresult.error;
+    result.R2{i} = aresult.R2;
+    result.real{i} = aresult.real;
+    result.guess{i} = aresult.guess;
 end
 
-%frame up example query
-k = 200;
-q.c = [input.signal(k,:)];
-q.x = input.x(k);
-q.y = input.y(k);
+result.R2 = cell2mat(result.R2);
+result.errorMed = cellfun(@(x) median(x),result.error);
+result.errorMedMM = result.errorMed / scale;
+% Following plots each cell to the boxplot
+col=@(x)reshape(x,numel(x),1);
+boxplot2=@(C,varargin)boxplot(cell2mat(cellfun(col,col(C),'uni',0)),cell2mat(arrayfun(@(I)I*ones(numel(C{I}),1),col(1:numel(C)),'uni',0)),varargin{:});
 
-% Look up based on our input values. Select several so we can average
-aSearch = min(powerVec - q.c,[],2);
-[B,ind] = mink(abs(aSearch),10);
-
-% Convert back to subscript index
-[v,h] = ind2sub(size(x),ind);
-% Average the position
-v = round(mean(v));
-h = round(mean(h));
-guess.x = h;
-guess.y = v;
-
-% Evaluate error
-error = sqrt((q.x - guess.x).^2 + (q.y - guess.y).^2);
+% figure(),hist(result.error)
+figure(), boxplot2(result.error), title('Error distribution on 4 files')
