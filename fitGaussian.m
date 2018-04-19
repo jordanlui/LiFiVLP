@@ -5,7 +5,7 @@ function [model,x,y,z] = fitGaussian(x,y,z,k)
     x0 = [0.25 100 100 50 50]; % Initial Guess. [a x0 y0 sx sy]
     % Interpolate data, return meshgrid and vectors. 
     [xi,yi,zi,x,y,z] = prepGaussian(x,y,z,k);
-    % Refine starting point estimate
+    % Refine starting point estimate by looking at max z value
     [amp, ind] = max(z);
     x0 = [1 x(ind) y(ind) 50 50]; % Guess. [a x0 y0 sx sy]
     
