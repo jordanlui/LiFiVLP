@@ -93,3 +93,11 @@ boxplot2=@(C,varargin)boxplot(cell2mat(cellfun(col,col(C),'uni',0)),cell2mat(arr
 
 % figure(),hist(result.error)
 figure(), boxplot2(result.error), title('Error distribution on 4 files')
+save(strcat(path,'results_july25.mat'),'result')
+
+%% Heatmap analysis of error
+% See the spatial distribution of error
+save(strcat(path,'results_july25.mat'),'result')
+figure()
+i = 1;
+plot3(result.real{i}.x,result.real{i}.y,result.error{i},'r.'), title('Spatial Distribution of error')
