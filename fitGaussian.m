@@ -1,6 +1,8 @@
 function [model,x,y,z] = fitGaussian(x,y,z,k,symmetric,threshold)
     % Fit a 2D Gaussian
-    % Gaussian Function
+    % Note this code needs much improving. Currently cannot fit symmetric
+    % thresholded Gaussian
+    
     posTol = 800; % Tolerance for spatial value
     sigmaTol = 1000; % Tolerance for size of sigma value
     sigma0 = 300; % Guess for Gaussian width
@@ -8,8 +10,10 @@ function [model,x,y,z] = fitGaussian(x,y,z,k,symmetric,threshold)
     threshold0 = 0.3;
     
     if nargin < 5
-        % If not specified, we will fit an asymmetric Gaussian
+        % If not specified, we will fit an asymmetric Gaussian with no
+        % threshold
         symmetric = 0;
+        threshold = 0;
     end
     
     % Interpolate data, return meshgrid and vectors. 
