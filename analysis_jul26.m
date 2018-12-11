@@ -5,87 +5,68 @@ clc
 clear 
 close all
 
-load('data_jul26.mat')
+addpath('../../../Code/Functions'); % Functions library
 
-%% Calculate average values
-for i = 1:length(param)
-    asum = sum(cat(3,param{i}{:}),3);
-    paramAvg{i} = asum/length(param{i});
+% Choose file we review
+investigationName = 'data_threshold_jul26';
+% investigationName = 'data_jul26';
+% investigationName = 'data_july25';
 
-end
-combined = cat(3,paramAvg{:}); % Average values at each height
-clear asum
+% Load file
+load(strcat(investigationName,'.mat'))
+% load('param_threshold_jul26')
+label.channel = {'1 khz','10 khz','40 khz','100 khz'};
+label.heights = [0, 65, 120, 160, 180, 190];
 
-%% Investigate issues with the 40 Hz transmitter (Channel 3)
-k = 100;
+N_heights = 6;
+N_files = 3;
+k = 250; % Point frequency to read into model
 
-% Following will compare the gaussians for each channel at diff heights
-clc
+%% Predictions with Gaussian power database
+
+% Perform fitting for each height
+% for height = 1:N_heights
+%     for afile = 1:N_files
+%         [i,j] = permutePair(afile,N_files); % Indices we use to train,test
+%         p = param{height}{j};
+%         input = data{height}(afile);
+%         ind = 1:k:length(input.x);
+%         
+%         % Lookup on predicted values
+%         aresult = lookupFingerprint(input,p,ind);
+%         result.error{height}{afile} = aresult.error;
+%         result.R2{height}{afile} = aresult.R2;
+%         result.real{height}{afile} = aresult.real;
+%         result.guess{height}{afile} = aresult.guess;
+%         
+%         
+%     end
+% 
+% end
+% 
+% save(strcat('result_',investigationName),'result')
+% 
+
+%% Plot and show results
 close all
-for j = [1:4]
-    figure(j)
-    for i = 1:6
-        adata = data{i}(1);
-        x = adata.x;
-        y = adata.y;
-        z = adata.signal(:,j);
-
-        [model,x,y,z] = fitGaussian(x,y,z,k,0,0.3);
-        coeffvalues(model)
-        % Plot problems
-        ax{j}(i) = subplot(3,2,i);
-        plot3(x,y,z,'r.')
-        plot(model,[x,y],z) % Plot the model surface to see error
-        title(sprintf('Gaussian for file %i. a=%.2f,[x0,y0]=%.2f,%.2f. sx=%.2f',i,model.a,model.x0,model.y0,model.sx));
-    end
-    hlink{j} = linkprop([ax{j}(:)],{'CameraPosition','CameraUpVector'});
+load(strcat('result_',investigationName))
+for i = 1:N_heights
+    result.errorMedians{i} = cellfun(@(x) median(x),result.error{i});
+    result.errorCombined{i} = vertcat(result.error{i}{:});
+    result.errorMedian{i} = median(result.errorCombined{i});
+    result.errorMean{i} = mean(result.errorCombined{i});
 end
 
+% Make a boxplot
+figure(), boxplot2(result.errorCombined),title('Error at different heights')
+xticklabels(label.heights)
+xlabel('System Height change (mm)')
+ylabel('Error (mm)')
+fixfig(gcf,0);
 
-%% Fit a single and check the values
-% clc
-% close all
+figure(),scatter(label.heights,[result.errorMedian{:}]), title('Height and Median error')
+ylabel('Median error (mm)'), xlabel('System height reduction (mm)')
+fixfig(gcf,0);
 
-% channel = 3;
-% for i = 1:6
-%     adata = data{i}(1);
-%     x = adata.x;
-%     y = adata.y;
-%     z = adata.signal(:,channel);
-% %     [model,x,y,z] = fitGaussianSymmetric(x,y,z,k);
-%     [model,x,y,z] = fitGaussian(x,y,z,k,1);
-%     model
-% end
-% coeffvalues(model)
-
-% close all
-% channel = 4;
-% i = 5;
-% adata = data{i}(1);
-% x = adata.x;
-% y = adata.y;
-% z = adata.signal(:,channel);
-% [model,x,y,z] = fitGaussian(x,y,z,k,0,1);
-% model
-% 
-% coeffvalues(model)
-% 
-% figure()
-% plot3(x,y,z,'r.')
-% plot(model,[x,y],z) % Plot the model surface to see error
-
-%% Plot out Gaussians and check quality
-
-% Plot out the gaussian trends for each file and visually compare
-% close all
-
-% for i = 1:length(param)
-%    figure(i)
-%    for j = 1:3
-%        ax{i}(j) = subplot(1,3,j);
-%        plot4Gaussian(param{i}{j})
-%    end
-%    hlink(i) = linkprop([ax{i}(:)],{'CameraPosition','CameraUpVector'});
-%     
-% end
-
+sprintf('Mean error overall is %.2f',mean(cell2mat(result.errorMedian)))
+sprintf('Mean error overall is %.2f',mean(cell2mat(result.errorMean)))

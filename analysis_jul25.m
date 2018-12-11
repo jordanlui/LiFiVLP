@@ -111,6 +111,10 @@ for i = 1:4
     result.guess{i} = aresult.guess;
 end
 
+%% Processing on result
+clear
+load('results_july25.mat')
+
 result.R2 = cell2mat(result.R2);
 result.errorMed = cellfun(@(x) median(x),result.error);
 result.errorMedMM = result.errorMed / scale;
@@ -120,7 +124,7 @@ boxplot2=@(C,varargin)boxplot(cell2mat(cellfun(col,col(C),'uni',0)),cell2mat(arr
 
 % figure(),hist(result.error)
 figure(), boxplot2(result.error), title('Error distribution on 4 files')
-save(strcat(path,'results_threshold_july25.mat'),'result')
+% save(strcat(path,'results_threshold_july25.mat'),'result')
 
 % %% Heatmap analysis of error
 % % See the spatial distribution of error

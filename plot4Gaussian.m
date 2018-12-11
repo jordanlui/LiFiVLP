@@ -18,6 +18,8 @@ function fig = plot4Gaussian(params)
         a=params(i,1); x0=params(i,2); y0=params(i,3); sx=params(i,4); sy=params(i,5);
         if size(params,2)>5
             threshold = params(i,6);
+        else
+            threshold = 0;
         end
         z = gaussFun(a,x0,y0,sx,sy,x,y,threshold);
         ax(i) = scatter3(reshape(x,[numel(x),1]),reshape(y,[numel(y),1]),reshape(z,[numel(z),1]),15,color{i});

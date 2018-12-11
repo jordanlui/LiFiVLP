@@ -2,6 +2,7 @@ function params = fit4Gaussian(data,symmetric,threshold)
     % Fit a Gaussian to each data channel and return parameters as matrix
     % Newly added feature to choose whether we fit a symmetric or
     % thresholded Gaussian
+    % Output: a, x0, y0, sx, sy, threshold
     
     if nargin < 2
         symmetric = 0;

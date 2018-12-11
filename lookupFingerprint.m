@@ -3,6 +3,7 @@ function result = lookupFingerprint(input,p,k)
     % Input is query struct, with known points
     % P are the params of a system, 4 Gaussian LED transmitters
     % k are the indices we will query
+    % Note error result is absolute (squared)
     
     if nargin <3
         % Then query all points
@@ -10,45 +11,56 @@ function result = lookupFingerprint(input,p,k)
     end
     
     % Simulate param space of Gaussians
+    % Create mesh grids
     x = 1:640;
     y = 1:480;
     [x,y] = meshgrid(x,y);
     powerVec = zeros(640*480,4);
+    % Calculate power values for each channel
     for i=1:4
         a=p(i,1); x0=p(i,2); y0=p(i,3); sx=p(i,4); sy=p(i,5);
-        power{i} = gaussFun(a,x0,y0,sx,sy,x,y);
+        % This if loop will handle case of threshold or no threshold 
+        % (the flat top gaussian threshold)
+        if size(p,2)>5
+            threshold = p(i,6);
+        else
+            threshold = 0 ;
+        end
+        % Calculate power values at each pixel location
+        power{i} = gaussFun(a,x0,y0,sx,sy,x,y,threshold);
+        % Reshape into a 307200 * 4 matrix for easy power lookups
         powerVec(:,i) = reshape(power{i},[640*480,1]);
     end
     
     % Loop through a different recording and test our accuracy
     M = length(k);
     error = zeros(M,1);
+    % Pre-allocate a struct for prediction values
     guess = struct('x',zeros(M,1),'y',zeros(M,1),'d',zeros(M,1));
 
-    % Grab the specific points we will query
+    % Grab test data. Grab the specific points we will query
     real.x = input.x(k);
     real.y = input.y(k);
     real.signal = input.signal(k,:);
-    real.d = sqrt(real.x.^2 + real.y.^2);
+    real.d = sqrt(real.x.^2 + real.y.^2); % Distance from origin. Arbitrary anchor point for our system
     
     %     Run through query points
     for i = 1:M
 
-        % Look up based on our input values. Select several so we can average
-        aSearch = min(powerVec - real.signal(i,:),[],2);
-        [B,ind] = mink(abs(aSearch),10);
-
-        % Convert back to subscript index
-        [v,h] = ind2sub(size(x),ind);
         
-        % Average the position
-        v = round(mean(v));
-        h = round(mean(h));
+        % Method 1 - Localize point based on clustered pick of minimum points 
+%         [h,v] = localizeClusteredMinimum(powerVec,real.signal(i,:),10,size(x));
+        
+        % Method 2 - localize point based on sum square differences
+        [h,v] = localizeSumSquareDifference(powerVec,real.signal(i,:),10,size(x));
+        
+        % Write result into guess vector
         guess.x(i) = h;
-        guess.y(i) = v;
+        guess.y(i) = v;  
 
-        % Evaluate error
-        error(i) = sqrt((real.x(i) - guess.x(i)).^2 + (real.y(i) - guess.y(i)).^2);
+        % Score error as difference in real and guessed position, pixel
+        % distance
+        error(i) = sqrt((real.x(i) - guess.x(i)).^2 + (real.y(i) - guess.y(i)).^2); 
         
     end
     guess.d = sqrt([guess.x].^2 + [guess.y].^2); % Calculate distance values

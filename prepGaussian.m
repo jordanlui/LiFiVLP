@@ -1,4 +1,5 @@
 function [xi,yi,zi,x,y,z] = prepGaussian(x,y,z,k)
+    % Interpolate data to fit meshgrid and fit the Gaussian via Matlab
     x = x(1:k:end);
     y = y(1:k:end);
     z = z(1:k:end);
