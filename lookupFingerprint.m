@@ -1,4 +1,4 @@
-function result = lookupFingerprint(input,p,k)
+function result = lookupFingerprint(testData,p,k)
     % Fingerprint analysis style lookup
     % Input is query struct, with known points
     % P are the params of a system, 4 Gaussian LED transmitters
@@ -7,7 +7,7 @@ function result = lookupFingerprint(input,p,k)
     
     if nargin <3
         % Then query all points
-        k = 1:length(input.x);
+        k = 1:length(testData.x);
     end
     
     % Simulate param space of Gaussians
@@ -17,6 +17,7 @@ function result = lookupFingerprint(input,p,k)
     [x,y] = meshgrid(x,y);
     powerVec = zeros(640*480,4);
     % Calculate power values for each channel
+    % This generates the Gaussian database based on parameters
     for i=1:4
         a=p(i,1); x0=p(i,2); y0=p(i,3); sx=p(i,4); sy=p(i,5);
         % This if loop will handle case of threshold or no threshold 
@@ -39,12 +40,13 @@ function result = lookupFingerprint(input,p,k)
     guess = struct('x',zeros(M,1),'y',zeros(M,1),'d',zeros(M,1));
 
     % Grab test data. Grab the specific points we will query
-    real.x = input.x(k);
-    real.y = input.y(k);
-    real.signal = input.signal(k,:);
+    real.x = testData.x(k);
+    real.y = testData.y(k);
+    real.signal = testData.signal(k,:);
     real.d = sqrt(real.x.^2 + real.y.^2); % Distance from origin. Arbitrary anchor point for our system
     
     %     Run through query points
+%     tic
     for i = 1:M
 
         
@@ -63,6 +65,7 @@ function result = lookupFingerprint(input,p,k)
         error(i) = sqrt((real.x(i) - guess.x(i)).^2 + (real.y(i) - guess.y(i)).^2); 
         
     end
+%     toc
     guess.d = sqrt([guess.x].^2 + [guess.y].^2); % Calculate distance values
     
     % Calculate R2 fit based on distance values

@@ -15,37 +15,36 @@ addpath('D:\Jordan''s Files\Documents\MATLAB\Libraries')
 % addpath('D:\Jordan''s Files\Documents\MATLAB\Libraries\fmgaussfit')
 files = dir(strcat(path,'*.csv'));
 %% Load Data
-N = 4; % Number of files we want to look at
-
-% Load into structs
-for i = 1 : N
-    data(i) = vlcLoader(files(i).name);
-
-end
-
-allData = struct2cell(data);
 labels = {'1 khz','10 khz','40 khz','100 khz'};
-combined.max = reshape([allData{5,:,:}],[N,4]);
-combined.min = reshape([allData{6,:,:}],[N,4]);
-save('data_july25.mat','data','allData','combined')
+[data,allData,normedData,combined,normalizationParameters] = loadTrialDataNormalizeSave(files);
+
+save('data_july25.mat','data','allData','combined','normedData','normalizationParameters')
+
+% Proceed with normalized data instead
+dataBackup = data;
+data = normedData;
 
 %% Gaussian fit on all 4 channels
 % Fit each channel on each file, and plot to compare
 close all
 
 % Loop through the files and fit each set of Gaussians and plot
-figure();
-for i = 1:N
+
+for i = 1:length(files)
     % Find the 4 Gaussian parameters for a file
-    params{i} = fit4Gaussian(data(i),0,0.3);
+    params{i} = fit4Gaussian(data(i),0,0.7);
     
-    % Plot the 4 gaussians
+end
+
+figure();
+for i = 1:4
+%     Plot the 4 gaussians
     ax(i) = subplot(2,2,i);
     plot4Gaussian(params{i});
 end
 
 % Link the axes so we can visually inspect and compare
-hlink = linkprop([ax(:)],{'CameraPosition','CameraUpVector'});
+% hlink = linkprop([ax(:)],{'CameraPosition','CameraUpVector'});
 
 %% Compare fit with plateau or reg Gaussian
 % k = 100;
@@ -75,7 +74,7 @@ hlink = linkprop([ax(:)],{'CameraPosition','CameraUpVector'});
 
 % Add up and take average
 paramAvg = (params{1} + params{2} + params{3} + params{4})./N;
-save('params_threshold_jul25.mat','params','paramAvg')
+save('params_threshold_normalized_jul25.mat','params','paramAvg')
 
 % Confirm table scale based on max params
 % distTx = sqrt( (paramAvg(1,2) - paramAvg(2,2))^2 + (paramAvg(1,3) - paramAvg(2,3))^2)

@@ -15,7 +15,7 @@ function params = fit4Gaussian(data,symmetric,threshold)
         k = 100;
 
         % Fit Model
-        [model,x,y,z] = fitGaussian(x,y,z,k,symmetric,threshold);
+        [model,~,~,~] = fitGaussian(x,y,z,k,symmetric,threshold);
         param{j} = coeffvalues(model);
     end
     % Reshape paramaters to matrix. Cell array may prove useful in future

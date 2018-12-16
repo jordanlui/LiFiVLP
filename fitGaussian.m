@@ -17,7 +17,7 @@ function [model,x,y,z] = fitGaussian(x,y,z,k,symmetric,threshold)
     end
     
     % Interpolate data, return meshgrid and vectors. 
-    [xi,yi,zi,x,y,z] = prepGaussian(x,y,z,k);
+    [~,~,~,x,y,z] = prepGaussian(x,y,z,k);
     % Refine starting point estimate by looking at max z value
     [amp, ind] = max(z);
     % Set tolerances

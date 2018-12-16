@@ -1,5 +1,13 @@
 function [xi,yi,zi,x,y,z] = prepGaussian(x,y,z,k)
     % Interpolate data to fit meshgrid and fit the Gaussian via Matlab
+    
+    % Consider shuffling the vectors randomly
+    p = randperm(length(x));
+    x = x(p);
+    y = y(p);
+    z = z(p);
+    
+    % Grab values
     x = x(1:k:end);
     y = y(1:k:end);
     z = z(1:k:end);
